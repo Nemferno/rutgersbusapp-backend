@@ -3,6 +3,7 @@ const { CacheObject } = require('../memcache');
 const { UniversityConfig } = require('./uniconfig');
 const cache = new CacheObject();
 
+function UniversityConfigController(){}
 /**
  * Gets the configuration for the university
  * @returns {Promise<UniversityConfig>}

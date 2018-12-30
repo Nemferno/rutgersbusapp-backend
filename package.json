@@ -4,18 +4,26 @@
   "description": "The back-end server for UniNav infrastructure.",
   "main": "bin/index.js",
   "scripts": {
+    "start": "set NODE_ENV='dev' && nodemon bin/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jasper Bae",
   "license": "ISC",
   "dependencies": {
+    "async": "^2.6.1",
     "bluebird": "^3.5.3",
     "body-parser": "^1.18.3",
+    "cheerio": "^1.0.0-rc.2",
     "cors": "^2.8.5",
+    "cron": "^1.6.0",
     "debug": "^4.1.1",
     "express": "^4.16.4",
     "memjs": "^1.2.0",
     "morgan": "^1.9.1",
+    "ngeohash": "^0.6.3",
     "pg-promise": "^8.5.4"
+  },
+  "devDependencies": {
+    "dotenv": "^6.2.0"
   }
 }

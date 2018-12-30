@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+    <head>
+        <script
+			  src="https://code.jquery.com/jquery-3.3.1.min.js"
+			  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+              crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <form
+              id="uniform"
+              action="/v2/api/university"
+              method="POST">
+            <div>
+                <label
+                    for="unid">
+                    University ID (TransLoc, or Other Providers ID)
+                </label>
+                <input id="unid" name="unid" type="text" required/>
+            </div>
+            <div>
+                <label
+                    for="uniname">
+                    University Name
+                </label>
+                <input id="uniname" name="uniname" type="text" required/>
+            </div>
+            <div>
+                <label
+                      for="uniaddress">
+                    University Street Address
+                </label>
+                <input id="uniaddress" name="uniaddress" type="text" required/>
+            </div>
+            <div id="zip-container">
+                <label
+                      for="unizip">
+                      Existing ZipCodes
+                </label>
+                <select id="unizip" name="unizip">
+                    <option value="null" selected>New</option>
+                </select>
+            </div>
+            <div>
+                <h6>Can't Find Your Zip?</h6>
+                <div>
+                    <label
+                          for="zipcity">
+                        City
+                    </label>
+                    <input id="zipcity" name="zipcity" />
+                </div>
+                <div>
+                    <label
+                          for="zipstate">
+                        US State
+                    </label>
+                    <input id="zipstate" name="zipstate" />
+                </div>
+                <div>
+                    <label
+                          for="zipcode">
+                        ZipCode
+                    </label>
+                    <input id="zipcode" name="zipcode" />
+                </div>
+            </div>
+            <input id="submit" type="submit"/>
+        </form>
+    </body>
+    <script src="/js/university.js"></script>
+</html>

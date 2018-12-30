@@ -33,6 +33,7 @@ function adjust(date, value, unit) {
     }
 }
 
+function NixleAlerter(){}
 NixleAlerter.getCrimeAlerts = function(url) {
     return new Promise(function(resolve, reject) {
         let request = https.get({

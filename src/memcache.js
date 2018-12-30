@@ -21,7 +21,7 @@ CacheObject.prototype.restart = function() {
     this.client = memjs.Client.create(null, config);
 }
 
-CacheObject.prototype.close = this.client.close;
+CacheObject.prototype.close = function() { this.client.close(); };
 CacheObject.prototype.get = function(key, callback) {
     callback = callback || function(err, value) {};
     this.client.get(this.path + key, function(err, data) {

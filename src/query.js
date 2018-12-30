@@ -5,16 +5,45 @@ if(ENV === 'dev') {
 
 const promise = require('bluebird');
 const options = {
-    promiseLib: promise,
+    promiseLib: promise
 };
 
 const pgp = require('pg-promise')(options);
 const URL = process.env.DATABASE_URL;
-const db = pgp(process.env.URL);
+const db = pgp({
+    connectionString: URL,
+    ssl: true
+});
 
 const geohash = require('ngeohash');
 
 const { Vehicle } = require('./model/vehicle');
+
+/**
+ * Gets all ZipCode stored in the database
+ * @returns {Promise<Array>}
+ */
+function getZipCodes() {
+    return db.any('SELECT * FROM zipcode');
+}
+
+/**
+ * Add a new ZipCode
+ * @returns {Promise}
+ */
+function addZipCode(zipcode, city, state) {
+    return db.none('INSERT INTO zipcode (zipcode, city, us_state) '
+        + 'VALUES($1, $2, $3)', [ zipcode, city, state ]);
+}
+
+/**
+ * Create a new University
+ * @returns {Promise}
+ */
+function addUniversity(uniname, uniaddress, unizipcode) {
+    return db.none('INSERT INTO university (universityid, universityname, streetaddress, zipcode) '
+        + 'VALUES($1, $2, $3)', [ uniname, uniaddress, unizipcode ]);
+}
 
 /**
  * Gets all universities stored
@@ -160,6 +189,9 @@ function getRoute(routeid, universityid) {
 }
 
 module.exports = {
+    addZipCode,
+    addUniversity,
+    getZipCodes,
     getBus,
     getBuses,
     getRoute,
