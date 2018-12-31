@@ -161,8 +161,8 @@ function processBus(newBus, universityid, currentList) {
     })
     .then((result) => {
         /** @type {Vehicle} */
-        let bus = result.nocreat ? result.data : newBus;
-        if(result.nocreat) {
+        let bus = result ? result.data : newBus;
+        if(result) {
             // we can do statistics and store history
             if(bus.lat !== newBus.lat || bus.lon !== newBus.lon) {
                 let date = new Date();
