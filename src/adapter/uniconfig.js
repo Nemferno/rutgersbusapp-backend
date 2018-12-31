@@ -117,7 +117,7 @@ UniversityConfig.parse = function(value) {
         config.error = value.error;
 
         let adapter = JSON.parse(value.adapter);
-        switch(adapter.name.toLowerCase()) {
+        switch(adapter.vendorname.toLowerCase()) {
             case 'transloc':
                 config.adapter = TranslocAdapter.parse(adapter);
                 break;
@@ -129,7 +129,7 @@ UniversityConfig.parse = function(value) {
             config.ready = (value.error) ? Promise.reject() : Promise.resolve();
 
         config.name = value.name;
-        
+
         return config;
     }
 

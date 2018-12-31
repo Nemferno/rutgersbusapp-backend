@@ -31,9 +31,9 @@ function run() {
 function processUni(universityid) {
     /** @type {UniversityConfig} */
     let config = null;
-    let buses = [];
+    let newBuses = [];
     let routes = [];
-    let current = [];
+    let cached = [];
 
     UniversityConfigController.get(universityid)
     .then((_config) => {
@@ -48,24 +48,23 @@ function processUni(universityid) {
             cache.get(`${ universityid }_buses`, (err, data) => {
                 if(err || !data) {
                     err && console.error({ error: err });
-                    return resolve({ list: list, current: [] });
+                    return resolve({ list: list, cached: [] });
                 }
                 
-                return resolve({ list: list, current: JSON.parse(data) });
+                return resolve({ list: list, cached: JSON.parse(data) });
             });
         });
     })
     .then((data) => {
         let list = data.list;
-        current = data.current;
+        newBuses = list;
+        cached = data.cached;
         return new Promise((resolve, reject) => {
             async.each(list, (bus, cb) => {
                 let tag = bus.routeTag;
                 if(!routes.includes(tag)) routes.push(tag);
 
-                buses.push(bus);
-
-                processBus(bus, universityid, current)
+                processBus(bus, universityid, cached)
                 .then(() => cb())
                 .catch((err) => cb(err));
             }, (err) => {
@@ -82,18 +81,19 @@ function processUni(universityid) {
     })
     .then(() => {
         // find out if a vehicle has completed its schedule
-        let keep = current.filter((e) => {
-            return buses.includes(e.name);
+        let keep = cached.filter((e) => {
+            return newBuses.find(newB => newB.name === e.name) !== undefined;
         });
 
-        let remove = current.filter((e) => {
-            return !buses.includes(e.name);
+        let remove = cached.filter((e) => {
+            return newBuses.find(newB => newB.name === e.name) === undefined;
         });
+
         for(let i = 0; i < remove.length; i++) {
             db.putBusScheduleCompleted(remove[i], universityid, new Date());
         }
 
-        cache.replace(`${ universityid }_buses`, JSON.stringify(keep), { expires: 60 * 60 });
+        cache.set(`${ universityid }_buses`, JSON.stringify(keep), { expires: 60 * 60 });
     })
     .catch((err) => {
         console.error({ error: err });
@@ -121,16 +121,18 @@ function processBus(newBus, universityid, currentList) {
             return db.createBus(newBus, universityid);
         }
 
-        return Promise.resolve();
+        return;
     }).then(() => {
         let found = currentList.find((e) => {
             return e.name === newBus.name;
         });
 
-        if(found)
-            return Promise.resolve({ found: true, data: found });
-        else
-            return Promise.resolve({ found: false, data: newBus });
+        if(found) {
+            return { found: true, data: found };
+        } else {
+            currentList.push(newBus);
+            return { found: false, data: null };
+        }
     })
     .then((result) => {
         return db.getActiveBusSchedules(new Date(), universityid)
@@ -141,19 +143,20 @@ function processBus(newBus, universityid, currentList) {
             });
 
             if(find) {
-                return Promise.resolve({ nocreat: true, data: result.data });
+                return { nocreat: true, data: result.data, routeid: find.routeid };
             } else {
                 // must create a route schedule
-                currentList.push(newBus);
-                
                 return db.getRouteByService(newBus.routeTag, universityid)
                 .then((data) => {
                     data = data[0];
 
                     if(data) {
-                        return db.addBusSchedule(result.data, data.routeid, universityid, new Date());
+                        return db.addBusSchedule(result.data, data.routeid, universityid, new Date())
+                        .then(() => {
+                            return { nocreat: false, data: result.data, routeid: routeid };
+                        });
                     } else {
-                        return Promise.reject();
+                        return;
                     }
                 });
             }
@@ -161,8 +164,8 @@ function processBus(newBus, universityid, currentList) {
     })
     .then((result) => {
         /** @type {Vehicle} */
-        let bus = result ? result.data : newBus;
-        if(result) {
+        let bus = result && result.data ? result.data : null;
+        if(bus) {
             // we can do statistics and store history
             if(bus.lat !== newBus.lat || bus.lon !== newBus.lon) {
                 let date = new Date();
@@ -172,7 +175,7 @@ function processBus(newBus, universityid, currentList) {
                     lon: bus.lon,
                     speed: bus.speed
                 };
-                db.addVehicleHistory(frame, bus, universityid, date);
+                db.addVehicleHistory(frame, bus, result.routeid, universityid, date);
 
                 bus.heading = newBus.heading;
                 bus.lat = newBus.lat;

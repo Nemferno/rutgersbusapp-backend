@@ -160,14 +160,14 @@ function getActiveBusSchedules(scheduledate, universityid) {
  * @param {Date} scheduledate - the day/month/year of the activity
  * @returns {Promise}
  */
-function addVehicleHistory(frame, vehicle, universityid, scheduledate) {
+function addVehicleHistory(frame, vehicle, routeid, universityid, scheduledate) {
     if(!frame || !vehicle || !universityid || !scheduledate) return Promise.reject('Null');
 
     const hashed = geohash.encode(frame.lat, frame.lon, 12);
 
-    return db.none("INSERT INTO schedulehistory (busid, routeid, universityid, scheduledate, coord, timestamp, speed) "
-        + "VALUES($1, $2, $3, to_date($4, 'Mon DD YYYY'), $5, to_timestamp($6, 'Mon DD YYYY HH24:MI:SS:MS'))",
-        [ vehicle.id, vehicle.routeTag, universityid, scheduledate.toISOString(), hashed, frame.timestamp.toISOString(), frame.speed ]);
+    return db.none("INSERT INTO schedulehistory (busid, routeid, universityid, scheduledate, coord, recordedstamp, speed) "
+        + "VALUES($1, $2, $3, $4, $5, $6, $7)",
+        [ vehicle.id, routeid, universityid, scheduledate.toDateString(), hashed, frame.timestamp.toISOString(), frame.speed ]);
 }
 
 /**
@@ -181,7 +181,7 @@ function getVehicleHistoryAt(vehicle, universityid, scheduledate) {
     if(!vehicle || !universityid || !scheduledate) return Promise.reject('Null');
 
     return db.any("SELECT coord, timestamp FROM schedulehistory WHERE busid=$1 AND routeid=$2 AND universityid=$3 AND "
-        + "scheduledate=to_date($4, 'Mon DD YYYY')", [ vehicle.id, vehicle.routeTag, universityid, scheduledate.toISOString() ]);
+        + "scheduledate=$4", [ vehicle.id, vehicle.routeTag, universityid, scheduledate.toDateString() ]);
 }
 
 /**

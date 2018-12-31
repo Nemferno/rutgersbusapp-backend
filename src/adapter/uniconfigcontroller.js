@@ -33,7 +33,9 @@ UniversityConfigController.get = function(id) {
         return (typeof config.ready === 'function') ? config.ready() : config.ready;
     }).then(function() {
         // 1 hour expiration
-        cache.set(`configs.${id}`, config.serialize(), { expires: 60 * 60 });
+        cache.set(`configs.${id}`, config.serialize(), { expires: 60 * 60 }, (err) => {
+            if(err) console.error({ error: err });
+        });
         return Promise.resolve(config);
     });
 }

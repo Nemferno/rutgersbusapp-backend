@@ -8,31 +8,31 @@ const { Vehicle } = require('../model/vehicle');
 
 function VendorAdapter(props) {
     Object.defineProperties(this, {
-        name: {
+        vendorname: {
             value: props.vendorname,
-            writable: false,
+            writable: true,
             enumerable: true,
         },
         serviceid: {
             value: props.serviceid,
-            writable: false,
+            writable: true,
             enumerable: true,
         }
     });
 }
-VendorAdapter.prototype.getName = function() { return this.name; }
+VendorAdapter.prototype.getName = function() { return this.vendorname; }
 VendorAdapter.prototype.times = function(route, stop) { return Promise.reject('Uninitialized function'); }
 VendorAdapter.prototype.vehicles = function() { return Promise.reject('Uninitialized function'); }
 VendorAdapter.prototype.stops = function() { return Promise.reject('Uninitialized function'); }
 VendorAdapter.prototype.config = function() { return Promise.reject('Uninitialized function'); }
 VendorAdapter.prototype.serialize = function() {
     return JSON.stringify({
-        name: this.name,
+        vendorname: this.vendorname,
         serviceid: this.serviceid
     });
 }
 VendorAdapter.parse = function(object) {
-    const data = { name, serviceid } = object;
+    const data = { vendorname, serviceid } = object;
     return new VendorAdapter(data);
 }
 
@@ -124,7 +124,7 @@ TranslocAdapter = function() {
 }
 TranslocAdapter.prototype = VendorAdapter.prototype;
 TranslocAdapter.parse = function(object) {
-    const data = { name, serviceid } = object;
+    const data = { vendorname, serviceid } = object;
     return new TranslocAdapter(data);
 }
 
