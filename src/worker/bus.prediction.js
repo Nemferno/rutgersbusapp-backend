@@ -16,8 +16,8 @@ function run() {
         db.getUniversities()
         .then((data) => {
             for(let i = 0; i < data.length; i++) {
-                let universityid = data[i];
-                process(universityid);
+                let universityid = data[i].universityid;
+                processUni(universityid);
             }
         })
         .catch((err) => {
@@ -28,41 +28,43 @@ function run() {
     }
 }
 
-function process(universityid) {
+function processUni(universityid) {
     /** @type {UniversityConfig} */
     let config = null;
     let buses = [];
     let routes = [];
+    let current = [];
 
     UniversityConfigController.get(universityid)
     .then((_config) => {
         config = _config;
-        return ((typeof config.ready) === 'function') ? config.ready() : config.ready;
+        return Promise.resolve();
     })
     .then(() => {
         return config.adapter.vehicles();
     })
     .then((list) => {
         return new Promise((resolve, reject) => {
-            cache.get(`${ unid }_buses`, (err, data) => {
+            cache.get(`${ universityid }_buses`, (err, data) => {
                 if(err || !data) {
                     err && console.error({ error: err });
-                    return Promise.resolve({ list: list, current: [] });
+                    return resolve({ list: list, current: [] });
                 }
                 
-                return Promise.resolve({ list: list, current: JSON.parse(data) });
+                return resolve({ list: list, current: JSON.parse(data) });
             });
         });
     })
     .then((data) => {
         let list = data.list;
-        let current = data.current;
+        current = data.current;
         return new Promise((resolve, reject) => {
             async.each(list, (bus, cb) => {
                 let tag = bus.routeTag;
                 if(!routes.includes(tag)) routes.push(tag);
 
-                // do something
+                buses.push(bus);
+
                 processBus(bus, universityid, current)
                 .then(() => cb())
                 .catch((err) => cb(err));
@@ -80,10 +82,18 @@ function process(universityid) {
     })
     .then(() => {
         // find out if a vehicle has completed its schedule
-        let keep = currentList.filter((e) => {
+        let keep = current.filter((e) => {
             return buses.includes(e.name);
         });
-        cache.replace(`${ unid }_buses`, JSON.stringify(keep), { expires: 60 * 60 });
+
+        let remove = current.filter((e) => {
+            return !buses.includes(e.name);
+        });
+        for(let i = 0; i < remove.length; i++) {
+            db.putBusScheduleCompleted(remove[i], universityid, new Date());
+        }
+
+        cache.replace(`${ universityid }_buses`, JSON.stringify(keep), { expires: 60 * 60 });
     })
     .catch((err) => {
         console.error({ error: err });
@@ -106,31 +116,48 @@ function processBus(newBus, universityid, currentList) {
     // check if the bus exists in the database, remember it later
     return db.getBus(newBus.id, universityid)
     .then((result) => {
+        result = result[0];
         if(!result) {
             return db.createBus(newBus, universityid);
         }
 
         return Promise.resolve();
     }).then(() => {
-        return new Promise((resolve, reject) => {
-            let found = currentList.find((e) => {
-                return e.name === newBus.name;
-            });
-            if(found)
-                return Promise.resolve({ found: true, data: found });
-            else
-                return Promise.resolve({ found: false, data: newBus });
+        let found = currentList.find((e) => {
+            return e.name === newBus.name;
         });
+
+        if(found)
+            return Promise.resolve({ found: true, data: found });
+        else
+            return Promise.resolve({ found: false, data: newBus });
     })
     .then((result) => {
-        if(result.found) {
-            // no need to create a route schedule
-            return Promise.resolve({ nocreat: true, data: result.data });
-        } else {
-            // must create a route schedule
-            currentList.push(newBus);
-            return db.addBusSchedule(result.data, universityid, new Date());
-        }
+        return db.getActiveBusSchedules(new Date(), universityid)
+        .then((list) => {
+            let find = list.find((value) => {
+                return value.busid === newBus.id &&
+                value.routeserviceid === newBus.routeTag;
+            });
+
+            if(find) {
+                return Promise.resolve({ nocreat: true, data: result.data });
+            } else {
+                // must create a route schedule
+                currentList.push(newBus);
+                
+                return db.getRouteByService(newBus.routeTag, universityid)
+                .then((data) => {
+                    data = data[0];
+
+                    if(data) {
+                        return db.addBusSchedule(result.data, data.routeid, universityid, new Date());
+                    } else {
+                        return Promise.reject();
+                    }
+                });
+            }
+        });
     })
     .then((result) => {
         /** @type {Vehicle} */

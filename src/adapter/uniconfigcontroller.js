@@ -19,17 +19,22 @@ UniversityConfigController.get = function(id) {
     }).then(function(data) {
         if(data) {
             // parse data
-            config = UniversityConfig.parse(JSON.parse(data));
+            try {
+                config = UniversityConfig.parse(JSON.parse(data));
+            } catch(err) {
+                console.error({ error: err });
+                config = new UniversityConfig(id);
+            }
         } else {
             // if null, create config
             config = new UniversityConfig(id);
         }
 
-        return config.ready();
+        return (typeof config.ready === 'function') ? config.ready() : config.ready;
     }).then(function() {
         // 1 hour expiration
-        memcache.set(`configs.${uniId}`, config.serialize(), { expires: 60 * 60 });
-        return resolve(config);
+        cache.set(`configs.${id}`, config.serialize(), { expires: 60 * 60 });
+        return Promise.resolve(config);
     });
 }
 

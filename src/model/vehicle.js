@@ -1,7 +1,7 @@
 
 function Vehicle(name, id, routeTag, lat, lon, speed, heading, lastUpdated) {
     this.name = name;
-    this.id = id;
+    this.id = Number.parseInt(id);
     this.routeTag = routeTag;
     this.lat = lat;
     this.lon = lon;

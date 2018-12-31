@@ -6,22 +6,21 @@ const fs = require('fs');
 const { StopTime } = require('../model/time');
 const { Vehicle } = require('../model/vehicle');
 
-function VendorAdapter(name, props) {
-    this.defineProperties(this, {
+function VendorAdapter(props) {
+    Object.defineProperties(this, {
         name: {
-            value: name,
+            value: props.vendorname,
             writable: false,
             enumerable: true,
         },
-        props: {
-            value: props,
+        serviceid: {
+            value: props.serviceid,
             writable: false,
             enumerable: true,
         }
     });
 }
 VendorAdapter.prototype.getName = function() { return this.name; }
-VendorAdapter.prototype.get = function(key) { return this.props[key]; }
 VendorAdapter.prototype.times = function(route, stop) { return Promise.reject('Uninitialized function'); }
 VendorAdapter.prototype.vehicles = function() { return Promise.reject('Uninitialized function'); }
 VendorAdapter.prototype.stops = function() { return Promise.reject('Uninitialized function'); }
@@ -29,12 +28,12 @@ VendorAdapter.prototype.config = function() { return Promise.reject('Uninitializ
 VendorAdapter.prototype.serialize = function() {
     return JSON.stringify({
         name: this.name,
-        props: this.props
+        serviceid: this.serviceid
     });
 }
 VendorAdapter.parse = function(object) {
-    const { name, props } = JSON.parse(object);
-    return new VendorAdapter(name, props);
+    const data = { name, serviceid } = object;
+    return new VendorAdapter(data);
 }
 
 TranslocAdapter = function() {
@@ -50,11 +49,11 @@ TranslocAdapter = function() {
                     "X-Mashape-Key": API_KEY,
                     "Accept": "application/json"
                 },
-                path: `/arrival-estimates.json?agencies=${ this.props["agency_id"] }&routes=${ route }&stops=${ stop }`
-            }, function(res) {
+                path: `/arrival-estimates.json?agencies=${ this.serviceid }&routes=${ route }&stops=${ stop }`
+            }, (res) => {
                 let body = "";
                 res.on('data', function(data) { body += data });
-                res.on('end', function() {
+                res.on('end', () => {
                     let json = JSON.parse(body);
                     let data = json.data;
 
@@ -96,13 +95,13 @@ TranslocAdapter = function() {
                     "X-Mashape-Key": API_KEY,
                     "Accept": "application/json"
                 },
-                path: '/vehicles.json?agencies=' + this.props["agency_id"]
-            }, function(res) {
+                path: '/vehicles.json?agencies=' + this.serviceid
+            }, (res) => {
                 let body = "";
                 res.on('data', function(data) { body += data });
-                res.on('end', function() {
+                res.on('end', () => {
                     let json = JSON.parse(body);
-                    let data = json.data[this.props["agency_id"]];
+                    let data = json.data[this.serviceid];
                     let vehicles = [];
 
                     if(!data) return resolve(vehicles);
@@ -125,8 +124,8 @@ TranslocAdapter = function() {
 }
 TranslocAdapter.prototype = VendorAdapter.prototype;
 TranslocAdapter.parse = function(object) {
-    const { name, props } = JSON.parse(object);
-    return new TranslocAdapter(name, props);
+    const data = { name, serviceid } = object;
+    return new TranslocAdapter(data);
 }
 
 module.exports = { VendorAdapter, TranslocAdapter };

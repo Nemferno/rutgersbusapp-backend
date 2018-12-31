@@ -2,44 +2,40 @@ const { CacheObject } = require('../memcache');
 const { TranslocAdapter, VendorAdapter } = require('../model/vendors');
 const { NixleAlerter } = require('../nixle');
 const cache = new CacheObject();
+const db = require('../query');
 
-function UniversityConfig(id, ignore) {
+function UniversityConfig(id) {
     this.error = null;
     this.ready = this.init;
     /** @type {VendorAdapter} */
     this.adapter = null;
 
-    this.id = id;
-    this.name = '';
-    ignore && this.init();
+    this.id = this.name = id;
 }
 
 UniversityConfig.prototype.init = function() {
     let self = this;
-    if(this.ready) return Promise.resolve();
 
-    return new Promise((resolve, reject) => {
-        fs.readFile(`university-configs/${ self.id }-config/adapter.config.json`, (err, data) => {
-            if(err) {
-                this.error = err;
-                this.ready = Promise.reject();
-                return reject(err);
-            }
+    return db.getUniversity(this.id)
+    .then((data) => {
+        data = data[0];
 
-            let json = JSON.parse(data.toString());
-            this.name = json.name;
-            this.crime = { name, url } = json.crime;
-            this.city = json.city_id;
-            switch(json.vendor.name.toLowerCase()) {
+        if(data) {
+            const payload = { serviceid, vendorname } = data;
+            switch(data.vendorname.toLowerCase()) {
                 case "transloc":
-                    this.adapter = new TransLocAdapter(json.vendor.name, json.vendor.others);
+                    this.adapter = new TranslocAdapter(payload);
                     break;
                 default:
-                    this.adapter = new VendorAdapter(json.vendor.name, json.vendor.others);
+                    this.adapter = new VendorAdapter(payload);
             }
 
-            resolve();
-        });
+            return Promise.resolve();
+        } else {
+            this.error = new Error(`No data about university, ${ this.id }, exists...`);
+            this.ready = Promise.reject();
+            return Promise.reject(this.error);
+        }
     }).then(() => {
         this.ready = Promise.resolve();
     });
@@ -109,21 +105,18 @@ UniversityConfig.prototype.getCrimeAlerts = function() {
 }
 UniversityConfig.prototype.serialize = function() {
     return JSON.stringify({
-        error: this.error,
         name: this.name,
         id: this.id,
         adapter: this.adapter.serialize(),
-        crime: this.crime,
-        city: this.city,
         ready: (typeof this.ready)
     });
 }
 UniversityConfig.parse = function(value) {
-    if(value.id && value.adapter && value.crime && value.city && value.name) {
-        let config = new UniversityConfig(value.id, true);
+    if(value.id && value.adapter && value.name) {
+        let config = new UniversityConfig(value.id);
         config.error = value.error;
 
-        let adapter = JSON.parse(val.adapter);
+        let adapter = JSON.parse(value.adapter);
         switch(adapter.name.toLowerCase()) {
             case 'transloc':
                 config.adapter = TranslocAdapter.parse(adapter);
@@ -136,8 +129,6 @@ UniversityConfig.parse = function(value) {
             config.ready = (value.error) ? Promise.reject() : Promise.resolve();
 
         config.name = value.name;
-        config.crime = value.crime;
-        config.city = value.city;
         
         return config;
     }
