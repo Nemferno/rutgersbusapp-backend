@@ -151,7 +151,7 @@ function processBus(newBus, universityid, currentList) {
                     data = data[0];
 
                     if(data) {
-                        return db.addBusSchedule(result.data, data.routeid, universityid, new Date())
+                        return db.addBusSchedule(result.data ? result.data : newBus, data.routeid, universityid, new Date())
                         .then(() => {
                             return { nocreat: false, data: result.data, routeid: routeid };
                         });

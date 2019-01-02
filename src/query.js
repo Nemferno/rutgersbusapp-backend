@@ -68,7 +68,7 @@ function getUniversity(id) {
  * @returns {Promise}
  */
 function createBus(vehicle, universityid) {
-    if(!vehicle || !universityid) return Promise.reject('Null');
+    if(!vehicle || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
 
     return db.none('INSERT INTO bus (busid, universityid) VALUES($1, $2)', [ vehicle.id, universityid ]);
 }
@@ -80,7 +80,7 @@ function createBus(vehicle, universityid) {
  * @returns {Promise}
  */
 function getBus(id, universityid) {
-    if(!id || !universityid) return Promise.reject('Null');
+    if(!id || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
 
     return db.any('SELECT * FROM Bus WHERE busid=$1 AND universityid=$2',
         [ id, universityid ]);
@@ -92,7 +92,7 @@ function getBus(id, universityid) {
  * @returns {Promise<Array>}
  */
 function getBuses(universityid) {
-    if(!universityid) return Promise.reject('Null');
+    if(!universityid) return Promise.reject('Null: ' + arguments.callee.name);
 
     return db.any('SELECT busid FROM bus WHERE universityid=$1', universityid);
 }
@@ -105,7 +105,7 @@ function getBuses(universityid) {
  * @returns {Promise}
  */
 function addBusSchedule(vehicle, routeid, universityid, scheduledate) {
-    if(!vehicle || !universityid || !routeid || !scheduledate) return Promise.reject('Null');
+    if(!vehicle || !universityid || !routeid || !scheduledate) return Promise.reject('Null: ' + arguments.callee.name);
 
     return db.none("INSERT INTO busschedule (busid, routeid, universityid, scheduledate) "
         + "VALUES($1, $2, $3, $4)", [ vehicle.id, routeid, universityid, scheduledate.toDateString()]);
@@ -119,7 +119,7 @@ function addBusSchedule(vehicle, routeid, universityid, scheduledate) {
  * @returns {Promise}
  */
 function putBusScheduleCompleted(vehicle, universityid, scheduledate) {
-    if(!vehicle || !universityid || !scheduledate) return Promise.reject('Null');
+    if(!vehicle || !universityid || !scheduledate) return Promise.reject('Null: ' + arguments.callee.name);
 
     return db.none("UPDATE busschedule SET finished=TRUE WHERE busid=$1 AND routeid=$2 AND universityid=$3 AND scheduledate=$4",
         [ vehicle.id, vehicle.routeTag, universityid, scheduledate.toDateString() ]);
@@ -161,7 +161,7 @@ function getActiveBusSchedules(scheduledate, universityid) {
  * @returns {Promise}
  */
 function addVehicleHistory(frame, vehicle, routeid, universityid, scheduledate) {
-    if(!frame || !vehicle || !universityid || !scheduledate) return Promise.reject('Null');
+    if(!frame || !vehicle || !universityid || !scheduledate) return Promise.reject('Null: ' + arguments.callee.name);
 
     const hashed = geohash.encode(frame.lat, frame.lon, 12);
 
@@ -178,7 +178,7 @@ function addVehicleHistory(frame, vehicle, routeid, universityid, scheduledate) 
  * @returns {Promise<Array>}
  */
 function getVehicleHistoryAt(vehicle, universityid, scheduledate) {
-    if(!vehicle || !universityid || !scheduledate) return Promise.reject('Null');
+    if(!vehicle || !universityid || !scheduledate) return Promise.reject('Null: ' + arguments.callee.name);
 
     return db.any("SELECT coord, timestamp FROM schedulehistory WHERE busid=$1 AND routeid=$2 AND universityid=$3 AND "
         + "scheduledate=$4", [ vehicle.id, vehicle.routeTag, universityid, scheduledate.toDateString() ]);
@@ -191,7 +191,7 @@ function getVehicleHistoryAt(vehicle, universityid, scheduledate) {
  * @returns {Promise<Array>}
  */
 function getRoute(routeid, universityid) {
-    if(!routeid || !universityid) return Promise.reject('Null');
+    if(!routeid || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
 
     return db.any("SELECT routeid, name, direction FROM route WHERE routeid=$1 AND universityid=$2",
         [routeid, universityid]);
@@ -204,7 +204,7 @@ function getRoute(routeid, universityid) {
  * @returns {Promise<Array>}
  */
 function getRouteByService(serviceid, universityid) {
-    if(!serviceid || !universityid) return Promise.reject('Null');
+    if(!serviceid || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
 
     return db.any("SELECT routeid, routename, direction, routeserviceid FROM route WHERE routeserviceid=$1 AND universityid=$2",
         [serviceid, universityid]);
