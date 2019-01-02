@@ -153,7 +153,7 @@ function processBus(newBus, universityid, currentList) {
                     if(data) {
                         return db.addBusSchedule(result.data ? result.data : newBus, data.routeid, universityid, new Date())
                         .then(() => {
-                            return { nocreat: false, data: result.data, routeid: routeid };
+                            return { nocreat: false, data: result.data, routeid: data.routeid };
                         });
                     } else {
                         return;
