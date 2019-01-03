@@ -32,7 +32,6 @@ function processUni(universityid) {
     /** @type {UniversityConfig} */
     let config = null;
     let newBuses = [];
-    let routes = [];
     let cached = [];
 
     UniversityConfigController.get(universityid)
@@ -62,7 +61,6 @@ function processUni(universityid) {
         return new Promise((resolve, reject) => {
             async.each(list, (bus, cb) => {
                 let tag = bus.routeTag;
-                if(!routes.includes(tag)) routes.push(tag);
 
                 processBus(bus, universityid, cached)
                 .then(() => cb())
@@ -75,16 +73,7 @@ function processUni(universityid) {
         });
     })
     .then(() => {
-        // save the information
-        cache.set(`${ universityid }_online`, JSON.stringify(routes), { expires: 60 * 60 });
-        return Promise.resolve();
-    })
-    .then(() => {
         // find out if a vehicle has completed its schedule
-        let keep = cached.filter((e) => {
-            return newBuses.find(newB => newB.name === e.name) !== undefined;
-        });
-
         let remove = cached.filter((e) => {
             return newBuses.find(newB => newB.name === e.name) === undefined;
         });
@@ -93,7 +82,7 @@ function processUni(universityid) {
             db.putBusScheduleCompleted(remove[i], universityid, new Date());
         }
 
-        cache.set(`${ universityid }_buses`, JSON.stringify(keep), { expires: 60 * 60 });
+        cache.set(`${ universityid }_buses`, JSON.stringify(newBuses), { expires: 60 * 60 });
     })
     .catch((err) => {
         console.error({ error: err });

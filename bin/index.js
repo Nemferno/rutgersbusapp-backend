@@ -14,7 +14,7 @@ const path = require('path');
 
 const API_VERSION = process.env.PATH_VERSION;
 const ROOT_PATH = process.env.ROOT_PATH;
-const FULL_PATH = '/' + API_VERSION + ROOT_PATH;
+const FULL_PATH = ROOT_PATH + '/' + API_VERSION;
 console.log({ path: FULL_PATH });
 
 const app = express();

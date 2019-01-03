@@ -4,7 +4,7 @@
     "description": "The back-end server for UniNav infrastructure.",
     "main": "bin/index.js",
     "scripts": {
-        "start-bus" : "set NODE_ENV=dev&&node src/worker/bus.prediction",
+        "start-bus": "set NODE_ENV=dev&&node src/worker/bus.prediction",
         "start": "set NODE_ENV=dev&& nodemon bin/index.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
@@ -25,6 +25,9 @@
         "pg-promise": "^8.5.4"
     },
     "devDependencies": {
-        "dotenv": "^6.2.0"
+        "chai": "^4.2.0",
+        "chai-http": "^4.2.1",
+        "dotenv": "^6.2.0",
+        "mocha": "^5.2.0"
     }
 }

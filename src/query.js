@@ -28,10 +28,24 @@ function getZipCodes() {
 }
 
 /**
+ * Gets online routes at a specified date
+ * @returns {Promise<{routeid:string, scheduledate:string}[]}
+ */
+function getOnlineRoutes(scheduledate, universityid) {
+    if(!scheduledate || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.any('SELECT R.routeid, R.routename, R.direction, R.routeserviceid FROM route AS R ' + 
+        'INNER JOIN (SELECT DISTINCT routeid, scheduledate FROM BusSchedule WHERE scheduledate=$1 ' +
+        'AND finished=FALSE AND universityid=$2) AS Q ON Q.routeid = R.routeid', [ scheduledate, universityid ]);
+}
+
+/**
  * Add a new ZipCode
  * @returns {Promise}
  */
 function addZipCode(zipcode, city, state) {
+    if(!zipcode || !city || !state) return Promise.reject('Null: ' + arguments.callee.name);
+
     return db.none('INSERT INTO zipcode (zipcode, city, us_state) '
         + 'VALUES($1, $2, $3)', [ zipcode, city, state ]);
 }
@@ -41,6 +55,8 @@ function addZipCode(zipcode, city, state) {
  * @returns {Promise}
  */
 function addUniversity(uniname, uniaddress, unizipcode) {
+    if(!uniname || !uniaddress || !unizipcode) return Promise.reject('Null: ' + arguments.callee.name);
+
     return db.none('INSERT INTO university (universityid, universityname, streetaddress, zipcode) '
         + 'VALUES($1, $2, $3)', [ uniname, uniaddress, unizipcode ]);
 }
@@ -58,6 +74,8 @@ function getUniversities() {
  * @returns {Promise}
  */
 function getUniversity(id) {
+    if(!id) return Promise.reject('Null: ' + arguments.callee.name);
+
     return db.any('SELECT U.universityid, U.serviceid, V.vendorname FROM University AS U RIGHT JOIN Vendor AS V ON U.vendorid = V.vendorid WHERE U.universityid=$1',
         [ id ]);
 }
@@ -211,6 +229,7 @@ function getRouteByService(serviceid, universityid) {
 }
 
 module.exports = {
+    getOnlineRoutes,
     getRouteByService,
     getUniversity,
     addZipCode,
