@@ -85,7 +85,7 @@ function processUni(universityid) {
             /** @type {Vehicle} */
             const removed = remove[i];
             const route = result.find(e => e.routeserviceid === removed.routeTag);
-            db.putBusScheduleCompleted(remove[i], route.routeid, universityid, new Date());
+            route && db.putBusScheduleCompleted(remove[i], route.routeid, universityid, new Date());
         }
 
         cache.set(`${ universityid }_buses`, JSON.stringify(newBuses), { expires: 60 * 60 });
@@ -181,5 +181,7 @@ function processBus(newBus, universityid, currentList) {
         }
     });
 }
+
+setInterval(run, 5000);
 
 module.exports = run;

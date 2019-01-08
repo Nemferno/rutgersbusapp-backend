@@ -19,6 +19,8 @@ const geohash = require('ngeohash');
 
 const { Vehicle } = require('./model/vehicle');
 
+
+
 /**
  * Gets all ZipCode stored in the database
  * @returns {Promise<Array>}
