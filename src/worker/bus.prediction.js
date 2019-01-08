@@ -73,13 +73,19 @@ function processUni(universityid) {
         });
     })
     .then(() => {
+        return db.getAllRoutes(universityid);
+    })
+    .then((result) => {
         // find out if a vehicle has completed its schedule
         let remove = cached.filter((e) => {
             return newBuses.find(newB => newB.name === e.name) === undefined;
         });
 
         for(let i = 0; i < remove.length; i++) {
-            db.putBusScheduleCompleted(remove[i], universityid, new Date());
+            /** @type {Vehicle} */
+            const removed = remove[i];
+            const route = result.find(e => e.routeserviceid === removed.routeTag);
+            db.putBusScheduleCompleted(remove[i], route.routeid, universityid, new Date());
         }
 
         cache.set(`${ universityid }_buses`, JSON.stringify(newBuses), { expires: 60 * 60 });

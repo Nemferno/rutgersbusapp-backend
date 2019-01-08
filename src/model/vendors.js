@@ -6,6 +6,8 @@ const fs = require('fs');
 const { StopTime } = require('../model/time');
 const { Vehicle } = require('../model/vehicle');
 
+const db = require('../query');
+
 function VendorAdapter(props) {
     Object.defineProperties(this, {
         vendorname: {
@@ -40,6 +42,12 @@ TranslocAdapter = function() {
     VendorAdapter.apply(this, arguments);
 
     this.times = function(route, stop) {
+        let isArray = false;
+        if(stop.constructor.name === 'Array') {
+            isArray = true;
+            stop = stop.join(encodeURIComponent('&'));
+        }
+
         return new Promise((resolve, reject) => {
             let request = https.request({
                 port: 443,
@@ -107,8 +115,8 @@ TranslocAdapter = function() {
                     if(!data) return resolve(vehicles);
                     for(let i = 0; i < data.length; i++) {
                         let item = data[i];
-                        const { call_name, vehicle_id, route_id, location, speed, heading, last_updated_on } = item;
-                        let v = new Vehicle(call_name, vehicle_id, route_id, location.lat, location.lng, speed, heading, last_updated_on);
+                        const { call_name, vehicle_id, route_id, location, speed, heading, last_updated_on, passenger_load } = item;
+                        let v = new Vehicle(call_name, vehicle_id, route_id, location.lat, location.lng, speed, heading, capacity, last_updated_on);
                         vehicles.push(v);
                     }
 

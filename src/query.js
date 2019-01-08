@@ -28,6 +28,29 @@ function getZipCodes() {
 }
 
 /**
+ * Gets configuration of a route
+ * @returns {Promise<{routeid:string, routename:string, stops:{stopid:string,stopname:string,coord:string,stopserviceid:string}[], segments:{}[]}[]>}
+ */
+function getRouteConfiguration(routeid, universityid) {
+    if(!routeid || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.any('SELECT R.routeid, R.routename, array_to_json(array_agg(S.* ORDER BY RS.stoporder)) AS stops, array_to_json(array_agg(RSEG.*) FILTER (WHERE RSEG.segmentid IS NOT NULL)) AS segments' +
+        ' FROM (((route AS R INNER JOIN routestop AS RS ON R.routeid=RS.routeid) INNER JOIN stop AS S ON RS.stopid=S.stopid) LEFT JOIN routesegment AS RSEG ON R.routeid=RSEG.routeid)' +
+        ' LEFT JOIN segment AS SEG ON SEG.segmentid=RSEG.segmentid WHERE R.universityid=$2 AND R.routeid=$1 GROUP BY R.routeid, R.routename', [ routeid, universityid ]);
+}
+
+/**
+ * Get stops of a route
+ * @returns {Promise<{stopid:string,stopname:string,coord:string,stopserviceid:string}[]>}
+ */
+function getRouteStops(routeid, universityid) {
+    if(!routeid || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.any('SELECT S.stopname, S.coord, S.stopserviceid FROM ((Route AS R INNER JOIN RouteStop AS RS ON R.routeid=RS.routeid) INNER JOIN ' +
+        'Stop AS S ON RS.stopid=S.stopid) WHERE R.universityid=$2 AND R.routeid=$1', [ routeid, universityid ]);
+}
+
+/**
  * Gets online routes at a specified date
  * @returns {Promise<{routeid:string, scheduledate:string}[]}
  */
@@ -37,6 +60,16 @@ function getOnlineRoutes(scheduledate, universityid) {
     return db.any('SELECT R.routeid, R.routename, R.direction, R.routeserviceid FROM route AS R ' + 
         'INNER JOIN (SELECT DISTINCT routeid, scheduledate FROM BusSchedule WHERE scheduledate=$1 ' +
         'AND finished=FALSE AND universityid=$2) AS Q ON Q.routeid = R.routeid', [ scheduledate, universityid ]);
+}
+
+/**
+ * Gets all routes
+ * @returns {Promise<{routeid:string, routename:string, direction:string, routeserviceid:string }[]>}
+ */
+function getAllRoutes(universityid) {
+    if(!universityid) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.any('SELECT R.routeid, R.routename, R.direction, R.routeserviceid FROM route AS R WHERE R.universityid=$1', [ universityid ]);
 }
 
 /**
@@ -136,11 +169,11 @@ function addBusSchedule(vehicle, routeid, universityid, scheduledate) {
  * @param {Date} scheduledate - the day/month/year of the activity
  * @returns {Promise}
  */
-function putBusScheduleCompleted(vehicle, universityid, scheduledate) {
-    if(!vehicle || !universityid || !scheduledate) return Promise.reject('Null: ' + arguments.callee.name);
+function putBusScheduleCompleted(vehicle, routeid, universityid, scheduledate) {
+    if(!vehicle || !universityid || !routeid || !scheduledate) return Promise.reject('Null: ' + arguments.callee.name);
 
     return db.none("UPDATE busschedule SET finished=TRUE WHERE busid=$1 AND routeid=$2 AND universityid=$3 AND scheduledate=$4",
-        [ vehicle.id, vehicle.routeTag, universityid, scheduledate.toDateString() ]);
+        [ vehicle.id, routeid, universityid, scheduledate.toDateString() ]);
 }
 
 /**
@@ -229,6 +262,9 @@ function getRouteByService(serviceid, universityid) {
 }
 
 module.exports = {
+    getAllRoutes,
+    getRouteStops,
+    getRouteConfiguration,
     getOnlineRoutes,
     getRouteByService,
     getUniversity,

@@ -55,7 +55,7 @@ UniversityConfig.prototype.getVehicles = function() {
         });
     });
 }
-UniversityConfig.prototype.getTimes = function(route, stop) {
+UniversityConfig.prototype.getStopTimes = function(route, stop) {
     if(this.error) return Promise.reject('Cannot execute a malfunctioned configuration!');
 
     return new Promise((resolve, reject) => {
@@ -66,7 +66,7 @@ UniversityConfig.prototype.getTimes = function(route, stop) {
         });
     }).then((data) => {
         if(data) {
-            return Promise.resolve(JSON.parse(data));
+            return JSON.parse(data);
         } else {
             return { raw: true, data: this.adapter.times(route, stop) };
         }
@@ -76,7 +76,37 @@ UniversityConfig.prototype.getTimes = function(route, stop) {
             data = data.data;
         }
         
-        return Promise.resolve(data);
+        return data;
+    });
+}
+UniversityConfig.prototype.getRouteTimes = function(route) {
+    if(this.error) return Promise.reject('Cannot execute a malfunctioned configuration!');
+
+    return new Promise((resolve, reject) => {
+        cache.get(`${ this.id }_times_${route}`, (err, data) => {
+            if(err) return reject(err);
+
+            resolve(data);
+        });
+    })
+    .then((data) => {
+        if(data) {
+            return JSON.parse(data);
+        } else {
+            return db.getRouteStops(route, this.id)
+            .then((data) => {
+                let stopservices = data.map(e => e.stopserviceid);
+                return { raw: true, data: this.adapter.times(route, stopservices) };
+            });
+        }
+    })
+    .then((data) => {
+        if(data.raw) {
+            cache.set(`${ this.id }_times_${route}`, JSON.stringify(data.data), { expires: 5 });
+            data = data.data;
+        }
+
+        return data;
     });
 }
 UniversityConfig.prototype.getCrimeAlerts = function() {
