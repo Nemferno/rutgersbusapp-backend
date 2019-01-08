@@ -116,7 +116,7 @@ TranslocAdapter = function() {
                     for(let i = 0; i < data.length; i++) {
                         let item = data[i];
                         const { call_name, vehicle_id, route_id, location, speed, heading, last_updated_on, passenger_load } = item;
-                        let v = new Vehicle(call_name, vehicle_id, route_id, location.lat, location.lng, speed, heading, capacity, last_updated_on);
+                        let v = new Vehicle(call_name, vehicle_id, route_id, location.lat, location.lng, speed, heading, passenger_load, last_updated_on);
                         vehicles.push(v);
                     }
 
