@@ -8,6 +8,7 @@ const { UniversityConfig } = require('../adapter/uniconfig');
 const { UniversityConfigController } = require('../adapter/uniconfigcontroller');
 const { CacheObject } = require('../memcache');
 const { Vehicle } = require('../model/vehicle');
+const { StatModule } = require('../stats');
 const db = require("../query");
 const cache = new CacheObject();
 
@@ -77,9 +78,17 @@ function processUni(universityid) {
     })
     .then((result) => {
         // find out if a vehicle has completed its schedule
-        let remove = cached.filter((e) => {
-            return newBuses.find(newB => newB.name === e.name) === undefined;
-        });
+        let keep = [];
+        let remove = [];
+        for(let i = 0; i < cached.length; i++) {
+            const item = cached[i];
+            const find = newBuses.find(newB => item.name === newB.name);
+            if(!find) {
+                remove.push(item);
+            } else {
+                keep.push(item);
+            }
+        }
 
         for(let i = 0; i < remove.length; i++) {
             /** @type {Vehicle} */
@@ -88,7 +97,7 @@ function processUni(universityid) {
             route && db.putBusScheduleCompleted(remove[i], route.routeid, universityid, new Date());
         }
 
-        cache.set(`${ universityid }_buses`, JSON.stringify(newBuses), { expires: 60 * 60 });
+        cache.set(`${ universityid }_buses`, JSON.stringify(keep), { expires: 60 * 60 });
     })
     .catch((err) => {
         console.error({ error: err });
@@ -177,11 +186,23 @@ function processBus(newBus, universityid, currentList) {
                 bus.lon = newBus.lon;
                 bus.lastUpdated = newBus.lastUpdated;
                 bus.speed = newBus.speed;
+            } else {
+                // check if the bus is zero
+                if(newBus.speed === 0) {
+                    if(!bus.onBreak()) {
+                        bus.break();
+                    } else {
+                        const diff = Date.now() - bus.breakStart.getTime();
+                        if(StatModule.isOnBreak(diff)) {
+                            bus.event |= 0b0010;
+                        } else {
+                            bus.event &= 0b0001;
+                        }
+                    }
+                }
             }
         }
     });
 }
-
-setInterval(run, 5000);
 
 module.exports = run;
