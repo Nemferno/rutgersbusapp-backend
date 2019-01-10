@@ -170,6 +170,10 @@ function processBus(newBus, universityid, currentList) {
         /** @type {Vehicle} */
         let bus = result && result.data ? result.data : null;
         if(bus) {
+            bus.onBreak = Vehicle.prototype.onBreak;
+            bus.run = Vehicle.prototype.run;
+            bus.break = Vehicle.prototype.break;
+            
             // we can do statistics and store history
             if(bus.lat !== newBus.lat || bus.lon !== newBus.lon) {
                 let date = new Date();
