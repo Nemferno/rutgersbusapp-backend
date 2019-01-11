@@ -77,7 +77,7 @@ TranslocAdapter = function() {
                             let id = arrival['route_id'];
                             if(!times[id]) times[id] = [];
 
-                            let time = new StopTime(id, item['stop_id'], item['vehicle_id'], item['arrival_at'], offset);
+                            let time = new StopTime(id, item['stop_id'], arrival['vehicle_id'], arrival['arrival_at'], offset);
                             times[id].push(time);
                         }
 

@@ -90,12 +90,12 @@ function processUni(universityid) {
             }
         }
 
-        for(let i = 0; i < remove.length; i++) {
-            /** @type {Vehicle} */
-            const removed = remove[i];
-            const route = result.find(e => e.routeserviceid === removed.routeTag);
-            route && db.putBusScheduleCompleted(remove[i], route.routeid, universityid, new Date());
-        }
+        // for(let i = 0; i < remove.length; i++) {
+        //     /** @type {Vehicle} */
+        //     const removed = remove[i];
+        //     const route = result.find(e => e.routeserviceid === removed.routeTag);
+        //     route && db.putBusScheduleCompleted(remove[i], route.routeid, universityid, new Date());
+        // }
 
         cache.set(`${ universityid }_buses`, JSON.stringify(keep), { expires: 60 * 60 });
     })

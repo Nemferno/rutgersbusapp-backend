@@ -1,5 +1,6 @@
 const { CacheObject } = require('../memcache');
 const { TranslocAdapter, VendorAdapter } = require('../model/vendors');
+const { Vehicle } = require('../model/vehicle');
 const { NixleAlerter } = require('../nixle');
 const cache = new CacheObject();
 const db = require('../query');
@@ -43,6 +44,7 @@ UniversityConfig.prototype.init = function() {
 UniversityConfig.prototype.getName = function() { return this.name; }
 UniversityConfig.prototype.getVendorName = function() { return this.adapter.getName(); }
 UniversityConfig.prototype.getCity = function() { return this.city; }
+/** @returns {Promise<Vehicle[]>} */
 UniversityConfig.prototype.getVehicles = function() {
     if(this.error) return Promise.reject('Cannot execute a malfunctioned configuration!');
 

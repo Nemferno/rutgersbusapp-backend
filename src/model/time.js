@@ -1,4 +1,7 @@
 
+/**
+ * @constructor
+ */
 function StopTime(route, stop, bus, time, minutes) {
     this.route = route;
     this.stop = stop;

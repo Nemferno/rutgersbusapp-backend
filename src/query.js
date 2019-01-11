@@ -19,7 +19,92 @@ const geohash = require('ngeohash');
 
 const { Vehicle } = require('./model/vehicle');
 
+/**
+ * @returns {Promise<Array>}
+ */
+function createUser(userid) {
+    if(!userid) return Promise.reject('Null: ' + arguments.callee.name);
 
+    return db.none('INSERT INTO passenger VALUES($1)', [ userid ]);
+}
+
+/**
+ * @param {string} userid - id of the user
+ * @param {string} startdate - date/time of the creation of the reminder
+ * @param {number} reminderDuration - how many minutes before the bus arrives to be reminded
+ * @param {number} stopid - id of the stop
+ * @param {number} routeid - id of the route
+ * @param {string} universityid - id of the university
+ * @returns {Promise<Array>}
+ */
+function createReminder(userid, startdate, reminderDuration, stopid, routeid, universityid) {
+    if(!userid || !startDate || !reminderDuration || !stopid || !routeid || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.none('INSERT INTO reminder (userid, startdate, reminderduration, stopid, routeid, universityid) ' +
+        'VALUES($1, $2, $3, $4, $5, $6, $7)', [ userid, startdate, reminderDuration, stopid, routeid, universityid ]);
+}
+
+/**
+ * @param {string} userid - id of the user
+ * @param {number} reminderid - id of the reminder
+ * @returns {Promise<Array>}
+ */
+function deleteReminder(userid, reminderid) {
+    if(!userid || !reminderid) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.none('DELETE FROM reminder WHERE reminderid=$1 AND userid=$2', [ reminderid, userid]);
+}
+
+/**
+ * @param {number} reminderid - id of the reminder
+ * @param {number} localestimate - minutes remaining until arrival
+ * @param {number} evblocked - blocked bits
+ * @param {number} pending - pending bits
+ * @param {number} target - target bus
+ * @param {Date} reminderexpected 
+ * @returns {Promise<Array>}
+ */
+function updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, reminderexpected) {
+    if(!reminderid || !localestimate || !evblocked || !pending || !target || !reminderexpected) {
+        return Promise.reject('Null: ' + arguments.callee.name);
+    }
+
+    return db.none('UPDATE reminder SET localestimate=$1, evblocked=$2, pending=$3, target=$4, reminderexpected=$5 WHERE reminderid=$6',
+        [ localestimate, evblocked, pending, target, reminderexpected.toDateString(), userid ]);
+}
+
+/**
+ * @param {string} userid
+ * @param {number} reminderid
+ * @param {number} reminderDuration
+ * @returns {Promise<Array>}
+ */
+function updateReminderByUser(userid, reminderid, reminderDuration) {
+    if(!userid || !reminderid || !reminderDuration) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.none('UPDATE reminder SET reminderduration=$1 WHERE userid=$2 AND reminderid=$3', 
+        [ reminderDuration, userid, reminderid]);
+}
+
+/**
+ * Gets all active reminders for universityid
+ * @returns {Promise<Array>}
+ */
+function getActiveReminders(universityid) {
+    if(!universityid) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.any('SELECT * FROM reminder WHERE universityid=$1 AND iscomplete=TRUE', [ universityid ]);
+}
+
+/**
+ * Gets all active reminders for user
+ * @returns {Promise<Array>}
+ */
+function getActiveRemindersFor(userid) {
+    if(!universityid) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.any('SELECT * FROM reminder WHERE userid=$1 AND iscomplete=TRUE', [ userid ]);
+}
 
 /**
  * Gets all ZipCode stored in the database
@@ -263,7 +348,29 @@ function getRouteByService(serviceid, universityid) {
         [serviceid, universityid]);
 }
 
+/**
+ * Gets both stop and route information
+ * @param {number} routeid
+ * @param {number} stopid
+ * @param {string} universityid
+ * @returns {Promise<Array>}
+ */
+function getRouteStop(routeid, stopid, universityid) {
+    if(!routeid || !universityid || !stopid) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.any("SELECT R.routename, R.direction, R.routeserviceid, S.stopname, S.coord, S.stopserviceid FROM (routestop AS RS INNER JOIN route AS R ON RS.routeid=R.routeid) " +
+        "INNER JOIN stop AS S ON RS.stopid=S.stopid WHERE RS.universityid=$1 AND RS.routeid=$2 AND RS.stopid=$3", [ universityid, routeid, stopid ]);
+}
+
 module.exports = {
+    deleteReminder,
+    updateReminderByUser,
+    updateReminderByWorker,
+    createReminder,
+    createUser,
+    getRouteStop,
+    getActiveReminders,
+    getActiveRemindersFor,
     getAllRoutes,
     getRouteStops,
     getRouteConfiguration,

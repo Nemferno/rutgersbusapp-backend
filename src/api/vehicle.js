@@ -14,7 +14,7 @@ const async = require('async');
 // Vehicle API Only
 router.get('/bus', function(req, res, next) {
     let { unid, busid, route } = req.query;
-    if(!unid || !route) {
+    if(!unid) {
         throw new Error('Invalid parameters!');
     }
 
@@ -27,10 +27,12 @@ router.get('/bus', function(req, res, next) {
     })
     .then((e) => {
         let payload = null;
-        if(route) {
+        if(busid) {
             payload = e.filter(e => e.routeTag === route);
-        } else {
+        } else if(route) {
             payload = (busid) ? e.filter(e => e.name === busid) : e;
+        } else {
+            payload = e;
         }
 
         res.status(200).json(payload);
