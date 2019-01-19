@@ -122,7 +122,7 @@ function processReminder(reminder) {
                     sendNoVehicleNotification(userid, routestopinfo)
                     .catch((err) => console.error({ error: err }));
                     db.updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, new Date(reminderexpected), true);
-                    throw new Error('No vehicles');
+                    throw null;
                 }
             });
         }
@@ -404,8 +404,14 @@ function processReminder(reminder) {
         return db.updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, date, iscomplete);
     })
     .catch((err) => {
-        console.error({ error: err });
-        return false;
+        if(err) {
+            console.error({ error: err });
+        }
+
+        if(!err)
+            return db.updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, date, iscomplete);
+        else
+            return false;
     });
 }
 
