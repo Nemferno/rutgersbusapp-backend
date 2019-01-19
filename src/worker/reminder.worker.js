@@ -361,7 +361,7 @@ function processReminder(reminder) {
                 if((evblocked & 0x1) !== 0x1) {
                     const vehicle = vehicles.find(e => e.id === target);
 
-                    sendReminder(userid, vehicle.name, routestopinfo, minutes.toFixed(0))
+                    sendReminder(userid, reminderid, vehicle.name, routestopinfo, minutes.toFixed(0))
                     .catch((err) => console.error({ error: err }));
 
                     db.updateActualReminder(reminderid, new Date());
@@ -389,7 +389,7 @@ function processReminder(reminder) {
                 if((evblocked & 0x1) !== 0x1) {
                     const vehicle = vehicles.find(e => e.id === target);
 
-                    sendReminder(userid, vehicle.name, routestopinfo, minutes.toFixed(0))
+                    sendReminder(userid, reminderid, vehicle.name, routestopinfo, minutes.toFixed(0))
                     .catch((err) => console.error({ error: err }));
 
                     db.updateActualReminder(reminderid, new Date());
@@ -502,13 +502,14 @@ function sendBreakNotification(userid, target, routestopinfo) {
 /**
  * @returns {Promise<boolean>}
  */
-function sendReminder(userid, target, routestopinfo, duration) {
+function sendReminder(userid, reminderid, target, routestopinfo, duration) {
     return sendNotification(
         `Bus Arriving in ${ duration } Mins`,
         `Your tracked ${ routestopinfo.routename } bus (#${ target }) for ${ routestopinfo.stopname } is coming in ${ duration } minutes. Please be ready to attend the bus.`,
         userid,
         true,
         {
+            'reminderid': reminderid.toString(),
             'type': '1',
             'stopid': routestopinfo.stopid,
             'routeid': routestopinfo.routeid
