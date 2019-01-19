@@ -419,9 +419,9 @@ function sendNoVehicleNotification(userid, routestopinfo) {
         userid,
         false,
         {
-            'type': 0,
-            'stopid': routestopinfo.stopid,
-            'routeid': routestopinfo.routeid
+            'type': '0',
+            'stopid': routestopinfo.stopid.toString(),
+            'routeid': routestopinfo.routeid.toString()
         }
     );
 }
@@ -433,9 +433,9 @@ function sendEarlyBusNotification(userid, target, routestopinfo) {
         userid,
         false,
         {
-            'type': 0,
-            'stopid': routestopinfo.stopid,
-            'routeid': routestopinfo.routeid
+            'type': '0',
+            'stopid': routestopinfo.stopid.toString(),
+            'routeid': routestopinfo.routeid.toString()
         }
     );
 }
@@ -450,9 +450,9 @@ function sendLateNotification(userid, target, routestopinfo, gap) {
         userid,
         false,
         {
-            'type': 0,
-            'stopid': routestopinfo.stopid,
-            'routeid': routestopinfo.routeid
+            'type': '0',
+            'stopid': routestopinfo.stopid.toString(),
+            'routeid': routestopinfo.routeid.toString()
         }
     );
 }
@@ -467,9 +467,9 @@ function sendUnknownNotification(userid, target, routestopinfo) {
         userid,
         false,
         {
-            'type': 0,
-            'stopid': routestopinfo.stopid,
-            'routeid': routestopinfo.routeid
+            'type': '0',
+            'stopid': routestopinfo.stopid.toString(),
+            'routeid': routestopinfo.routeid.toString()
         }
     );
 }
@@ -484,9 +484,9 @@ function sendBreakNotification(userid, target, routestopinfo) {
         userid,
         false,
         {
-            'type': 0,
-            'stopid': routestopinfo.stopid,
-            'routeid': routestopinfo.routeid
+            'type': '0',
+            'stopid': routestopinfo.stopid.toString(),
+            'routeid': routestopinfo.routeid.toString()
         }
     );
 }
@@ -501,9 +501,9 @@ function sendReminder(userid, target, routestopinfo, duration) {
         userid,
         true,
         {
-            'type': 1,
-            'stopid': routestopinfo.stopid,
-            'routeid': routestopinfo.routeid
+            'type': '1',
+            'stopid': routestopinfo.stopid.toString(),
+            'routeid': routestopinfo.routeid.toString()
         }
     );
 }
