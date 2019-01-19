@@ -408,10 +408,14 @@ function processReminder(reminder) {
             console.error({ error: err });
         }
 
-        if(!err)
+        if(!err) {        
+            const date = new Date(reminderexpected);
+            const frameDate = new Date(frame.time);
+            date.setTime(date.getTime() - (frameDate.getTimezoneOffset() * 60 * 1000));
             return db.updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, date, iscomplete);
-        else
+        } else {
             return false;
+        }
     });
 }
 
