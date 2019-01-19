@@ -420,8 +420,8 @@ function sendNoVehicleNotification(userid, routestopinfo) {
         false,
         {
             'type': '0',
-            'stopid': routestopinfo.stopid.toString(),
-            'routeid': routestopinfo.routeid.toString()
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
         }
     );
 }
@@ -434,8 +434,8 @@ function sendEarlyBusNotification(userid, target, routestopinfo) {
         false,
         {
             'type': '0',
-            'stopid': routestopinfo.stopid.toString(),
-            'routeid': routestopinfo.routeid.toString()
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
         }
     );
 }
@@ -451,8 +451,8 @@ function sendLateNotification(userid, target, routestopinfo, gap) {
         false,
         {
             'type': '0',
-            'stopid': routestopinfo.stopid.toString(),
-            'routeid': routestopinfo.routeid.toString()
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
         }
     );
 }
@@ -468,8 +468,8 @@ function sendUnknownNotification(userid, target, routestopinfo) {
         false,
         {
             'type': '0',
-            'stopid': routestopinfo.stopid.toString(),
-            'routeid': routestopinfo.routeid.toString()
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
         }
     );
 }
@@ -485,8 +485,8 @@ function sendBreakNotification(userid, target, routestopinfo) {
         false,
         {
             'type': '0',
-            'stopid': routestopinfo.stopid.toString(),
-            'routeid': routestopinfo.routeid.toString()
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
         }
     );
 }
@@ -502,8 +502,8 @@ function sendReminder(userid, target, routestopinfo, duration) {
         true,
         {
             'type': '1',
-            'stopid': routestopinfo.stopid.toString(),
-            'routeid': routestopinfo.routeid.toString()
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
         }
     );
 }
