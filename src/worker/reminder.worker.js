@@ -121,8 +121,13 @@ function processReminder(reminder) {
                     // no route...
                     sendNoVehicleNotification(userid, routestopinfo)
                     .catch((err) => console.error({ error: err }));
-                    db.updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, new Date(reminderexpected), true);
-                    throw null;
+
+                    const date = new Date(reminderexpected);
+                    const frameDate = new Date(frame.time);
+                    date.setTime(date.getTime() - (frameDate.getTimezoneOffset() * 60 * 1000));
+
+                    db.updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, date, true);
+                    throw new Error('No Vehicle');
                 }
             });
         }
@@ -408,17 +413,7 @@ function processReminder(reminder) {
             console.error({ error: err });
         }
 
-        if(!err) {
-            const rank = (pending >>> 8) & 0xF;
-            const frame = times[rank];
-
-            const date = new Date(reminderexpected);
-            const frameDate = new Date(frame.time);
-            date.setTime(date.getTime() - (frameDate.getTimezoneOffset() * 60 * 1000));
-            return db.updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, date, iscomplete);
-        } else {
-            return false;
-        }
+        return false;
     });
 }
 
