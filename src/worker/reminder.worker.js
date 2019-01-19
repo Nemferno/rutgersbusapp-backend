@@ -408,7 +408,10 @@ function processReminder(reminder) {
             console.error({ error: err });
         }
 
-        if(!err) {        
+        if(!err) {
+            const rank = (pending >>> 8) & 0xF;
+            const frame = times[rank];
+
             const date = new Date(reminderexpected);
             const frameDate = new Date(frame.time);
             date.setTime(date.getTime() - (frameDate.getTimezoneOffset() * 60 * 1000));
