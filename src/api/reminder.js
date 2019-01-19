@@ -36,10 +36,11 @@ router.delete('/reminder/:userid/:id', function(req, res, next) {
         next(err);
     });
 });
-router.put('/reminder', function(req, res, next) {
-    const { userid, reminderid, duration } = req.body;
+router.put('/reminder/:userid/:id', function(req, res, next) {
+    const { userid, id } = req.params;
+    const { duration } = req.body;
 
-    db.updateReminderByUser(userid, reminderid, duration)
+    db.updateReminderByUser(userid, id, duration)
     .then(() => {
         res.status(200).json({ success: true });
     })

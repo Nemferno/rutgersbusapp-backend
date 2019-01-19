@@ -70,7 +70,10 @@ UniversityConfig.prototype.getStopTimes = function(route, stop) {
         if(data) {
             return JSON.parse(data);
         } else {
-            return { raw: true, data: this.adapter.times(route, stop) };
+            return this.adapter.times(route, stop)
+            .then((data) => {
+                return { raw: true, data: data };
+            });
         }
     }).then((data) => {
         if(data.raw) {
@@ -98,7 +101,10 @@ UniversityConfig.prototype.getRouteTimes = function(route) {
             return db.getRouteStops(route, this.id)
             .then((data) => {
                 let stopservices = data.map(e => e.stopserviceid);
-                return { raw: true, data: this.adapter.times(route, stopservices) };
+                return this.adapter.times(route, stopservices);
+            })
+            .then((data) => {
+                return { raw: true, data: data };
             });
         }
     })
@@ -124,7 +130,10 @@ UniversityConfig.prototype.getCrimeAlerts = function() {
         if(data) {
             return Promise.resolve(data);
         } else {
-            return { raw: true, data: NixleAlerter.getCrimeAlerts() };
+            return NixleAlerter.getCrimeAlerts()
+            .then((data) => {
+                return { raw: true, data: data };
+            });
         }
     }).then((data) => {
         if(data.raw) {

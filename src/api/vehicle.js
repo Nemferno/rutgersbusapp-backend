@@ -28,9 +28,9 @@ router.get('/bus', function(req, res, next) {
     .then((e) => {
         let payload = null;
         if(busid) {
-            payload = e.filter(e => e.routeTag === route);
-        } else if(route) {
             payload = (busid) ? e.filter(e => e.name === busid) : e;
+        } else if(route) {
+            payload = e.filter(e => e.routeTag === route);
         } else {
             payload = e;
         }
@@ -48,10 +48,24 @@ router.get('/online', function(req, res, next) {
         throw new Error('Invalid parameters!');
     }
 
-    const today = new Date();
-    db.getOnlineRoutes(today.toDateString(), unid)
+    /** @type {UniversityConfig} */
+    let config = null;
+    UniversityConfigController.get(unid)
+    .then((_config) => {
+        config = _config;
+        return config.getVehicles();
+    })
+    .then((e) => {
+        const today = new Date();
+        return db.getOnlineRoutes(today.toDateString(), unid)
+        .then((data) => {
+            return { vehicles: e, routes: data };
+        });
+    })
     .then((data) => {
-        res.status(200).json(data);
+        const { vehicles, routes } = data;
+        const online = routes.filter(route => vehicles.find(vehicle => vehicle.routeTag === route.routeserviceid) !== undefined);
+        res.status(200).json(online);
     })
     .catch((err) => {
         console.error({ error: err, path: '/online' });

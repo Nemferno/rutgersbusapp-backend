@@ -139,7 +139,7 @@ function processBus(newBus, universityid, currentList) {
         }
     })
     .then((result) => {
-        return db.getActiveBusSchedules(new Date(), universityid)
+        return db.getAllBusSchedules(new Date(), universityid)
         .then((list) => {
             let find = list.find((value) => {
                 return value.busid === newBus.id &&
@@ -173,6 +173,7 @@ function processBus(newBus, universityid, currentList) {
             bus.onBreak = Vehicle.prototype.onBreak;
             bus.run = Vehicle.prototype.run;
             bus.break = Vehicle.prototype.break;
+            bus.breakStart = new Date(bus.break);
             
             // we can do statistics and store history
             if(bus.lat !== newBus.lat || bus.lon !== newBus.lon) {

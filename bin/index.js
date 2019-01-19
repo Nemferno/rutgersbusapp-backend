@@ -3,6 +3,8 @@ const ENV = process.env.NODE_ENV;
 if(ENV === 'dev') {
     require('dotenv').config();
 
+    require('./clock');
+
     console.info({ 'node-env': ENV });
 }
 

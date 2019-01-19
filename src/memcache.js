@@ -24,7 +24,7 @@ CacheObject.prototype.restart = function() {
 CacheObject.prototype.close = function() { this.client.close(); };
 CacheObject.prototype.get = function(key, callback) {
     callback = callback || function(err, value) {};
-    this.client.get(this.path + key, function(err, data) {
+    this.client.get(this.path + key, (err, data) => {
         if(err) {
             console.error({ error: err });
             this.validateError(err);
@@ -38,7 +38,7 @@ CacheObject.prototype.get = function(key, callback) {
 CacheObject.prototype.set = function(key, value, options, callback) {
     options = options || { expires: 60 };
     callback = callback || function(err) {};
-    this.client.set(this.path + key, value, options, function(err) {
+    this.client.set(this.path + key, value, options, (err) => {
         if(err) {
             console.error({ error: err });
             this.validateError(err);
@@ -52,7 +52,7 @@ CacheObject.prototype.set = function(key, value, options, callback) {
 CacheObject.prototype.replace = function(key, value, options, callback) {
     options = options || { expires: 60 };
     callback = callback || function(err) {};
-    this.client.set(this.path + key, value, options, function(err, success) {
+    this.client.set(this.path + key, value, options, (err, success) => {
         if(err) {
             console.error({ error: err });
             this.validateError(err);
@@ -65,7 +65,7 @@ CacheObject.prototype.replace = function(key, value, options, callback) {
 }
 CacheObject.prototype.delete = function(key, callback) {
     callback = callback || function(err) {};
-    this.client.delete(key, function(err, success) {
+    this.client.delete(key, (err, success) => {
         if(err) {
             console.error({ error: err });
             this.validateError(err);
@@ -77,7 +77,7 @@ CacheObject.prototype.delete = function(key, callback) {
     });
 }
 CacheObject.prototype.validateError = function(err) {
-    if(err.message.trim() === 'No Servers available')
+    if(err.message.trim().toLowerCase() === 'no servers available')
         this.restart();
 }
 

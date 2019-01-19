@@ -9,6 +9,10 @@ const options = {
 };
 
 const pgp = require('pg-promise')(options);
+pgp.pg.types.setTypeParser(1114, function(value) {
+    return value;
+});
+
 const URL = process.env.DATABASE_URL;
 const db = pgp({
     connectionString: URL,
@@ -18,6 +22,15 @@ const db = pgp({
 const geohash = require('ngeohash');
 
 const { Vehicle } = require('./model/vehicle');
+
+/**
+ * @returns {Promise<Array>}
+ */
+function getAllStops(universityid) {
+    if(!universityid) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.any('SELECT stopid, stopname, stopserviceid, json_agg(coord) as coord from stop group by stopid, stopname, stopserviceid order by stopname');
+}
 
 /**
  * @returns {Promise<Array>}
@@ -38,10 +51,10 @@ function createUser(userid) {
  * @returns {Promise<Array>}
  */
 function createReminder(userid, startdate, reminderDuration, stopid, routeid, universityid) {
-    if(!userid || !startDate || !reminderDuration || !stopid || !routeid || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
+    if(!userid || !startdate || !reminderDuration || !stopid || !routeid || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
 
     return db.none('INSERT INTO reminder (userid, startdate, reminderduration, stopid, routeid, universityid) ' +
-        'VALUES($1, $2, $3, $4, $5, $6, $7)', [ userid, startdate, reminderDuration, stopid, routeid, universityid ]);
+        'VALUES($1, $2, $3, $4, $5, $6)', [ userid, startdate, reminderDuration, stopid, routeid, universityid ]);
 }
 
 /**
@@ -52,7 +65,7 @@ function createReminder(userid, startdate, reminderDuration, stopid, routeid, un
 function deleteReminder(userid, reminderid) {
     if(!userid || !reminderid) return Promise.reject('Null: ' + arguments.callee.name);
 
-    return db.none('DELETE FROM reminder WHERE reminderid=$1 AND userid=$2', [ reminderid, userid]);
+    return db.none('UPDATE reminder SET iscomplete=TRUE WHERE reminderid=$1 AND userid=$2', [ reminderid, userid]);
 }
 
 /**
@@ -64,13 +77,25 @@ function deleteReminder(userid, reminderid) {
  * @param {Date} reminderexpected 
  * @returns {Promise<Array>}
  */
-function updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, reminderexpected) {
-    if(!reminderid || !localestimate || !evblocked || !pending || !target || !reminderexpected) {
+function updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, reminderexpected, iscomplete) {
+    console.log({ arguments });
+    if(!reminderid || !localestimate || !target || !reminderexpected) {
         return Promise.reject('Null: ' + arguments.callee.name);
     }
 
-    return db.none('UPDATE reminder SET localestimate=$1, evblocked=$2, pending=$3, target=$4, reminderexpected=$5 WHERE reminderid=$6',
-        [ localestimate, evblocked, pending, target, reminderexpected.toDateString(), userid ]);
+    return db.none('UPDATE reminder SET localestimate=$1, evblocked=$2, pending=$3, target=$4, reminderexpected=$5, iscomplete=$7 WHERE reminderid=$6',
+        [ localestimate, evblocked, pending, target, reminderexpected.toISOString(), reminderid, iscomplete ]);
+}
+
+/**
+ * @param {number} reminderid
+ * @param {Date} actual
+ * @returns {Promise<Array>}
+ */
+function updateActualReminder(reminderid, actual) {
+    if(!reminderid || !actual) return Promise.reject('Null: ' + arguments.callee.name);
+
+    return db.none('UPDATE reminder SET reminderactual=$1 WHERE reminderid=$2', [ actual.toISOString(), reminderid ]);
 }
 
 /**
@@ -93,7 +118,8 @@ function updateReminderByUser(userid, reminderid, reminderDuration) {
 function getActiveReminders(universityid) {
     if(!universityid) return Promise.reject('Null: ' + arguments.callee.name);
 
-    return db.any('SELECT * FROM reminder WHERE universityid=$1 AND iscomplete=TRUE', [ universityid ]);
+    return db.any('SELECT * FROM (reminder AS R LEFT JOIN route AS RO ON R.routeid=RO.routeid) LEFT JOIN ' +
+        'stop AS S ON R.stopid=S.stopid WHERE R.universityid=$1 AND R.iscomplete=FALSE', [ universityid ]);
 }
 
 /**
@@ -101,9 +127,10 @@ function getActiveReminders(universityid) {
  * @returns {Promise<Array>}
  */
 function getActiveRemindersFor(userid) {
-    if(!universityid) return Promise.reject('Null: ' + arguments.callee.name);
+    if(!userid) return Promise.reject('Null: ' + arguments.callee.name);
 
-    return db.any('SELECT * FROM reminder WHERE userid=$1 AND iscomplete=TRUE', [ userid ]);
+    return db.any('SELECT * FROM (reminder AS R LEFT JOIN route AS RO ON R.routeid=RO.routeid) LEFT JOIN ' +
+        'stop AS S ON R.stopid=S.stopid WHERE R.userid=$1 AND R.iscomplete=FALSE', [ userid ]);
 }
 
 /**
@@ -121,9 +148,9 @@ function getZipCodes() {
 function getRouteConfiguration(routeid, universityid) {
     if(!routeid || !universityid) return Promise.reject('Null: ' + arguments.callee.name);
 
-    return db.any('SELECT R.routeid, R.routename, array_to_json(array_agg(S.* ORDER BY RS.stoporder)) AS stops, array_to_json(array_agg(RSEG.*) FILTER (WHERE RSEG.segmentid IS NOT NULL)) AS segments' +
-        ' FROM (((route AS R INNER JOIN routestop AS RS ON R.routeid=RS.routeid) INNER JOIN stop AS S ON RS.stopid=S.stopid) LEFT JOIN routesegment AS RSEG ON R.routeid=RSEG.routeid)' +
-        ' LEFT JOIN segment AS SEG ON SEG.segmentid=RSEG.segmentid WHERE R.universityid=$2 AND R.routeid=$1 GROUP BY R.routeid, R.routename', [ routeid, universityid ]);
+    return db.any('SELECT R.routeid, R.routename, R.routeserviceid, R.direction, array_to_json(array_agg(S.* ORDER BY RS.stoporder)) AS stops, array_to_json(array_agg(DISTINCT SEG.segmentdata) FILTER (WHERE RSEG.segmentid IS NOT NULL)) AS segments ' +
+     'FROM (((route AS R INNER JOIN routestop AS RS ON R.routeid=RS.routeid) INNER JOIN stop AS S ON RS.stopid=S.stopid) INNER JOIN routesegment AS RSEG ON R.routeid=RSEG.routeid) ' +
+     'LEFT JOIN segment AS SEG ON SEG.segmentid=RSEG.segmentid WHERE R.universityid=$2 AND R.routeid=$1 GROUP BY R.routeid, R.routename, R.routeserviceid, R.direction', [ routeid, universityid ]);
 }
 
 /**
@@ -146,7 +173,7 @@ function getOnlineRoutes(scheduledate, universityid) {
 
     return db.any('SELECT R.routeid, R.routename, R.direction, R.routeserviceid FROM route AS R ' + 
         'INNER JOIN (SELECT DISTINCT routeid, scheduledate FROM BusSchedule WHERE scheduledate=$1 ' +
-        'AND finished=FALSE AND universityid=$2) AS Q ON Q.routeid = R.routeid', [ scheduledate, universityid ]);
+        'AND universityid=$2) AS Q ON Q.routeid = R.routeid', [ scheduledate, universityid ]);
 }
 
 /**
@@ -272,7 +299,7 @@ function putBusScheduleCompleted(vehicle, routeid, universityid, scheduledate) {
 function getAllBusSchedules(scheduledate, universityid) {
     if(!scheduledate || !universityid) return Promise.reject();
 
-    return db.any("SELECT BS.busid, BS.routeid, BS.universityid, BS.finished, R.routename, R.direction, R.routeserviceid FROM (BusSchedule AS BS INNER JOIN Route AS R ON BS.routeid = R.routeid)"
+    return db.any("SELECT BS.busid, BS.routeid, BS.universityid, R.routename, R.direction, R.routeserviceid FROM (BusSchedule AS BS INNER JOIN Route AS R ON BS.routeid = R.routeid)"
         + " WHERE BS.universityid=$1 AND BS.scheduledate=$2", [ universityid, scheduledate.toDateString() ]);
 }
 
@@ -363,6 +390,8 @@ function getRouteStop(routeid, stopid, universityid) {
 }
 
 module.exports = {
+    updateActualReminder,
+    getAllStops,
     deleteReminder,
     updateReminderByUser,
     updateReminderByWorker,

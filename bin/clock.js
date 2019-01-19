@@ -7,4 +7,10 @@ const { CronJob } = require('cron');
         start: true,
         timeZone: 'America/New_York'
     });
+    new CronJob({
+        cronTime: '*/10 * * * * *',
+        onTick: require('../src/worker/reminder.worker'),
+        start: true,
+        timeZone: 'America/New_York'
+    });
 })();

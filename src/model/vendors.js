@@ -45,7 +45,7 @@ TranslocAdapter = function() {
         let isArray = false;
         if(stop.constructor.name === 'Array') {
             isArray = true;
-            stop = stop.join(encodeURIComponent('&'));
+            stop = stop.join(encodeURIComponent(','));
         }
 
         return new Promise((resolve, reject) => {
@@ -57,7 +57,7 @@ TranslocAdapter = function() {
                     "X-Mashape-Key": API_KEY,
                     "Accept": "application/json"
                 },
-                path: `/arrival-estimates.json?agencies=${ this.serviceid }&routes=${ route }&stops=${ stop }`
+                path: `/arrival-estimates.json?agencies=${ this.serviceid }${ route ? '&routes=' + route : '' }&stops=${ stop }`
             }, (res) => {
                 let body = "";
                 res.on('data', function(data) { body += data });
@@ -77,7 +77,7 @@ TranslocAdapter = function() {
                             let id = arrival['route_id'];
                             if(!times[id]) times[id] = [];
 
-                            let time = new StopTime(id, item['stop_id'], arrival['vehicle_id'], arrival['arrival_at'], offset);
+                            let time = new StopTime(id, item['stop_id'], Number.parseInt(arrival['vehicle_id']), arrival['arrival_at'], offset);
                             times[id].push(time);
                         }
 

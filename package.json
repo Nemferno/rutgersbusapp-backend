@@ -25,6 +25,7 @@
         "pg-promise": "^8.5.4"
     },
     "devDependencies": {
+        "@mapbox/polyline": "^1.0.0",
         "chai": "^4.2.0",
         "chai-http": "^4.2.1",
         "dotenv": "^6.2.0",
