@@ -416,14 +416,27 @@ function sendNoVehicleNotification(userid, routestopinfo) {
     return sendNotification(
         'No Vehicles Alert', 
         `Your tracked ${ routestopinfo.routename } route for ${ routestopinfo.stopname } is offline. We are sorry for the inconvenience. Please check the schedules.`,
-        userid);
+        userid,
+        false,
+        {
+            'type': 0,
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
+        }
+    );
 }
 
 function sendEarlyBusNotification(userid, target, routestopinfo) {
     return sendNotification(
         'Earlier Bus Arriving',
         `We are tracking an earlier ${ routestopinfo.routename } route bus (#${ target }) for ${ routestopinfo.stopname}.`,
-        userid
+        userid,
+        false,
+        {
+            'type': 0,
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
+        }
     );
 }
 
@@ -434,7 +447,14 @@ function sendLateNotification(userid, target, routestopinfo, gap) {
     return sendNotification(
         'Late Arrival Alert', 
         `Your tracked ${ routestopinfo.routename } bus (#${ target }) for ${ routestopinfo.stopname } is in traffic. It will take ${ gap } more minutes until it arrives.`,
-        userid);
+        userid,
+        false,
+        {
+            'type': 0,
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
+        }
+    );
 }
 
 /**
@@ -444,7 +464,13 @@ function sendUnknownNotification(userid, target, routestopinfo) {
     return sendNotification(
         'Unknown Cause Alert',
         `We do not know what happened to your tracked ${ routestopinfo.routename } bus (#${ target }) for ${ routestopinfo.stopname }. We are sorry for the inconvenience. Please create a new reminder.`,
-        userid
+        userid,
+        false,
+        {
+            'type': 0,
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
+        }
     );
 }
 
@@ -455,7 +481,13 @@ function sendBreakNotification(userid, target, routestopinfo) {
     return sendNotification(
         'Break Alert',
         `Your tracked ${ routestopinfo.routename } bus (#${ target }) for ${ routestopinfo.stopname } is on break. We will automatically adjust if the next bus will arrive sooner.`,
-        userid
+        userid,
+        false,
+        {
+            'type': 0,
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
+        }
     );
 }
 
@@ -466,14 +498,20 @@ function sendReminder(userid, target, routestopinfo, duration) {
     return sendNotification(
         `Bus Arriving in ${ duration } Mins`,
         `Your tracked ${ routestopinfo.routename } bus (#${ target }) for ${ routestopinfo.stopname } is coming in ${ duration } minutes. Please be ready to attend the bus.`,
-        userid
+        userid,
+        true,
+        {
+            'type': 1,
+            'stopid': routestopinfo.stopid,
+            'routeid': routestopinfo.routeid
+        }
     );
 }
 
 /**
  * @returns {Promise<boolean>}
  */
-function sendNotification(title, content, userid) {
+function sendNotification(title, content, userid, remind, payload) {
     return new Promise((resolve, reject) => {
         const request = https.request({
             hostname: 'onesignal.com',
@@ -503,9 +541,10 @@ function sendNotification(title, content, userid) {
                 "en": "Reminder Alert - " + title
             },
             contents: {
-                "en": content
+                "en": content,
             },
-            template_id: 'c21a53e5-ede7-4fe7-b9d8-503929349ed3',
+            data: payload,
+            template_id: (remind) ? '5ffa2fb1-fb60-43b1-b8b8-bb99aa01a3cf' : 'c21a53e5-ede7-4fe7-b9d8-503929349ed3',
             include_player_ids: [ userid ]
         }));
         request.end();
