@@ -97,6 +97,10 @@ function processReminder(reminder) {
             // check if the bus has any events
             return config.getVehicles()
             .then((vehicles) => {
+                // we need to consider if an earlier bus comes
+                const rank = (pending >>> 8) & 0xF;
+                if(rank === 0xF) { return false; }
+
                 /** @type {Vehicle} */
                 const vehicle = vehicles.find(e => e.id === target);
                 if((vehicle & 0x1) === 0x1) 
@@ -289,11 +293,30 @@ function processReminder(reminder) {
                 }
             }
         } else {
-            target = times[0].bus;
-            reminderexpected = times[0].time;
+            // we need to consider if an earlier bus comes
+            const rank = (pending >>> 8) & 0xF;
+            let frame = null;
+            if(rank === 0xF) {
+                frame = times[0];
+                pending &= 0x100FF;
+                pending |= (0 << 8);
+            } else {
+                // check if a frame exists
+                let frame = times[rank];
+                if(!frame) {
+                    // we sadly can't go further beyond
+                    // invoke a no vehicle notification
+                    sendNoVehicleNotification(userid, routestopinfo)
+                    .catch((err) => console.error({ error: err }));
+
+                    db.updateReminderByWorker(reminderid, localestimate, evblocked, pending, target, date, true);
+                    throw new Error('No Vehicle');
+                }
+            }
+
+            target = frame.bus;
+            reminderexpected = frame.time;
             console.log('rank else');
-            pending &= 0x100FF;
-            pending |= (0 << 8);
         }
 
         return data;

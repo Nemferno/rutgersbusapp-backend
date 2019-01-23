@@ -48,5 +48,16 @@ router.put('/reminder/:userid/:id', function(req, res, next) {
         next(err);
     });
 });
+router.put('/reminder/:userid/:id/skip', function(req, res, next) {
+    const { userid, id } = req.params;
+
+    db.resetReminder(userid, id)
+    .then(() => {
+        res.status(201).json({ success: true });
+    })
+    .catch((err) => {
+        next(err);
+    });
+});
 
 module.exports = router;

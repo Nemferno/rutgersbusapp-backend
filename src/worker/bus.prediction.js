@@ -125,7 +125,7 @@ function processBus(newBus, universityid, currentList) {
             return db.createBus(newBus, universityid);
         }
 
-        return;
+        return null;
     }).then(() => {
         let found = currentList.find((e) => {
             return e.name === newBus.name;
@@ -149,11 +149,13 @@ function processBus(newBus, universityid, currentList) {
             if(find) {
                 return { nocreat: true, data: result.data, routeid: find.routeid };
             } else {
+                console.log({ tag: newBus.routeTag });
                 // must create a route schedule
                 return db.getRouteByService(newBus.routeTag, universityid)
                 .then((data) => {
                     data = data[0];
 
+                    console.log({ data });
                     if(data) {
                         return db.addBusSchedule(result.data ? result.data : newBus, data.routeid, universityid, new Date())
                         .then(() => {
@@ -168,15 +170,16 @@ function processBus(newBus, universityid, currentList) {
     })
     .then((result) => {
         /** @type {Vehicle} */
-        let bus = result && result.data ? result.data : null;
+        let bus = (result && result.data) ? result.data : null;
         if(bus) {
             bus.onBreak = Vehicle.prototype.onBreak;
             bus.run = Vehicle.prototype.run;
             bus.break = Vehicle.prototype.break;
-            bus.breakStart = new Date(bus.break);
+            bus.breakStart = new Date(bus.breakStart);
             
             // we can do statistics and store history
             if(bus.lat !== newBus.lat || bus.lon !== newBus.lon) {
+                console.log('new history');
                 let date = new Date();
                 let frame = {
                     timestamp: date,

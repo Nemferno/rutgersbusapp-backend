@@ -101,6 +101,31 @@ function updateActualReminder(reminderid, actual) {
 /**
  * @param {string} userid
  * @param {number} reminderid
+ * @returns {Promise<Array>}
+ */
+function resetReminder(userid, reminderid) {
+    if(!userid || !reminderid) { return Promise.reject('Null: ' + arguments.callee.name); }
+
+    return db.any('SELECT * FROM reminder WHERE userid=$1 AND reminderid=$2', [ userid, reminderid ])
+    .then((data) => {
+        if(data.length === 0) { throw new Error('Reminder does not exist'); }
+
+        const { pending } = data[0];
+        // increase rank, and raise flag to record skip, raise flag that it is a new notification too
+        let rank = (pending >>> 8) & 0xF;
+        pending &= 0x100FF;
+        pending |= (++rank << 8);
+        pending |= 0x30000;
+
+        // call database to update pending, iscomplete, set target to null
+        return db.none('UPDATE reminder SET pending=$1, iscomplete=FALSE, target=NULL WHERE userid=$2 AND reminderid=$3',
+        [ pending, userid, reminderid ]);
+    });
+}
+
+/**
+ * @param {string} userid
+ * @param {number} reminderid
  * @param {number} reminderDuration
  * @returns {Promise<Array>}
  */
@@ -390,6 +415,7 @@ function getRouteStop(routeid, stopid, universityid) {
 }
 
 module.exports = {
+    resetReminder,
     updateActualReminder,
     getAllStops,
     deleteReminder,
